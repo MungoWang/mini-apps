@@ -1,26 +1,34 @@
 # mini-apps
 
-可分享的 [monkey-mini-app](https://github.com/MungoWang/monkey-mini-app) / dsh 小程序合集。
+[English](README.md) | [中文](README.zh.md)
 
-每个目录是一个独立 app：`apps/<appId>/`（含 `manifest.json` + `ui.tsx` + `main.api.ts`）。
+A public collection of shareable [monkey-mini-app](https://github.com/MungoWang/monkey-mini-app) / dsh mini-apps.
 
-## 前置
+Each folder under `apps/<appId>/` is one self-contained app (`manifest.json` + `ui.tsx` + `main.api.ts`, plus optional `ui/` / `api/` / `shared/`). Drop it into your local runtime and it shows up in the gallery next to chat.
 
-本机已安装 dsh 插件，例如：
+## Prerequisites
+
+Install the dsh adapter first (once per machine):
 
 ```bash
 dsh plugin add --profile web -w @monkey-mini-app/dsh-mini-app@0.1.15
 ```
 
-## 安装某一个 app
+Then:
 
-把仓库里的 app 拷进本机 runtime（以「刻度清单」为例）：
+```bash
+dsh web --no-open   # http://127.0.0.1:3080 ; apps host default :17880
+```
+
+## Install one app
+
+**刻度清单** (`com.mungo.kedu`) — local todos: today / inbox / upcoming / board / stats, quick parse, subtasks, tags, shortcuts.
 
 ```bash
 npx --yes degit MungoWang/mini-apps/apps/com.mungo.kedu ~/.monkey-mini-app/runtime/apps/com.mungo.kedu
 ```
 
-或用 git：
+Or with git:
 
 ```bash
 git clone --depth 1 https://github.com/MungoWang/mini-apps.git /tmp/mini-apps \
@@ -30,12 +38,18 @@ git clone --depth 1 https://github.com/MungoWang/mini-apps.git /tmp/mini-apps \
   && rm -rf /tmp/mini-apps
 ```
 
-然后打开 dsh web → 小程序，应能看到 **刻度清单**（`com.mungo.kedu`）。若列表未刷新，重启 `dsh web` 或对该 app 执行一次 reload。
+Open dsh web →「小程序」. You should see **刻度清单**. If the gallery does not refresh, restart `dsh web` or reload that app.
 
-> `storage/` 不进仓库：每台机器各自有本地数据。
+> `storage/` is gitignored. Each machine keeps its own data.
 
-## 目录
+## Catalog
 
-| App ID | 名称 | 路径 |
+| App ID | Name | Path |
 |---|---|---|
 | `com.mungo.kedu` | 刻度清单 | [`apps/com.mungo.kedu`](./apps/com.mungo.kedu) |
+
+## Add another app
+
+1. Put sources under `apps/<reverse-dns-id>/` with a valid `manifest.json`.
+2. Do not commit `storage/`, `.autogen/`, or `node_modules/`.
+3. Document the install line in both READMEs.
