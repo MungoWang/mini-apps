@@ -851,7 +851,7 @@ export function QuickAdd(props: { inputRef: React.RefObject<HTMLInputElement | n
           </div>
         ) : null}
 
-      <div className={cn("kd-card group relative rounded-2xl border", inboxCount ? "kd-inbox-card" : "", raw ? "border-foreground" : "border-border/[0.78]")}>
+      <div className={cn("kd-card kd-quickadd group relative rounded-2xl border", inboxCount ? "kd-inbox-card" : "", raw ? "border-foreground" : "border-border/[0.78]")}>
         {inboxCount ? (
           <button
             ref={zoneRef}

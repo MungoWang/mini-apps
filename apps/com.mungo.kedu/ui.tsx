@@ -1,4 +1,23 @@
 import * as React from "react";
+
+// the rule is stretched to whatever width the row has, so a 4-crest path flattened out into a
+// straight line. 40 crests across the same 120 units keep the wavelength near 20px at any width.
+function wavePathAt(y: number, amp: number, up: boolean, width = 120, crests = 14): string {
+  let d = "M0 " + String(y);
+  const step = width / crests;
+  for (let i = 0; i < crests; i++) {
+    const peak = i % 2 === 0;
+    d += " q" + String(step / 2) + " " + (peak === up ? String(-amp) : String(amp)) + " " + String(step) + " 0";
+  }
+  return d;
+}
+// hairline waves in the rule (small amp)
+function wavePath(up: boolean): string {
+  return wavePathAt(5, 1.35, up, 120, 14);
+}
+const WAVE_UP = wavePath(true);
+const WAVE_DOWN = wavePath(false);
+
 import { motion, useMotionValue, useSpring } from "motion/react";
 
 import {
@@ -501,11 +520,22 @@ export default function Ui() {
         }
       >
         <div className={cn("relative flex h-full min-h-0 flex-col gap-4", selectedId ? "kd-recede" : "")}>
-          <div className="flex shrink-0 items-center gap-3">
-            <Micro className="shrink-0">今日进度</Micro>
-            <TickBar ratio={todayRatio} ticks={24} />
-            <span className="bg-border/[0.72] h-px flex-1" />
-            <Mono size={11} className="shrink-0 text-muted-foreground">
+          <div className={"flex shrink-0 items-center gap-3" + (todayLoad > 0 && stats.doneToday >= todayLoad ? " kd-today-full" : "")}>
+            <Micro className="shrink-0">{todayLoad > 0 && stats.doneToday >= todayLoad ? "今日清空 ·" : "今日进度"}</Micro>
+            <TickBar ratio={todayRatio} ticks={24} celebrate={todayLoad > 0 && stats.doneToday >= todayLoad} />
+            {todayLoad > 0 && stats.doneToday >= todayLoad ? (
+              <span className="kd-today-rule" aria-hidden="true">
+                <svg className="kd-wave kd-wave-a" viewBox="0 0 120 10" preserveAspectRatio="none">
+                  <path d={WAVE_UP} fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                </svg>
+                <svg className="kd-wave kd-wave-b" viewBox="0 0 120 10" preserveAspectRatio="none">
+                  <path d={WAVE_DOWN} fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+                </svg>
+              </span>
+            ) : (
+              <span className="bg-border/[0.72] h-px flex-1" />
+            )}
+            <Mono size={11} className="kd-today-count shrink-0 text-muted-foreground">
               {String(stats.doneToday) + "/" + String(todayLoad)}
             </Mono>
             {stats.overdue ? (
@@ -518,7 +548,7 @@ export default function Ui() {
           {/* everything below the input recedes while its picker is open */}
           <div className={cn("flex min-h-0 flex-1 flex-col gap-5", assistOpen ? "kd-dim" : "")}>
           <div
-          className="kd-card border-border/[0.78] shrink-0 overflow-hidden rounded-2xl border"
+          className="kd-card border-border/[0.78] shrink-0 overflow-visible rounded-2xl border"
           onMouseOver={function (e) {
             const el = e.target as HTMLElement;
             const tag = el.closest("[data-tag]");
@@ -536,127 +566,148 @@ export default function Ui() {
           {/* Panel body: every filter lives in ONE band, so the panel reads as header + body
               instead of three stacked stripes. Search is a normal-width field, not the hero —
               tags and priority are peers, and the tags keep the quieter treatment. */}
-          <div className="flex flex-col gap-2.5 px-4 pb-3 pt-5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="relative" style={{ flex: "1 1 260px", minWidth: 140, maxWidth: 520 }}>
-                <Icon.Search size={13} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
-                <input
-                  ref={searchRef}
-                  value={query}
-                  placeholder="搜索或筛选…"
-                  onChange={function (e) {
-                    setQuery(e.target.value);
-                  }}
-                  className="kd-input pl-[34px] h-8 w-full rounded-lg border border-input bg-transparent pr-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground"
-                />
-              </div>
-
-              {stats.tags.length ? (
-                <button
-                  type="button"
-                  title="展开筛选：优先级与标签"
-                  aria-expanded={filtersOpen}
-                  onClick={function () {
-                    setFiltersOpen(!filtersOpen);
-                  }}
-                  className={cn(
-                    "kd-ghost kd-filterbtn shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 transition-colors",
-                    hasFilters || filtersOpen
-                      ? "border-foreground text-foreground"
-                      : "border-border/[0.78] text-muted-foreground hover:border-foreground hover:text-foreground"
-                  )}
-                  style={{ fontSize: "10.5px" }}
-                >
-                  <Icon.Filter size={11} strokeWidth={1.9} />
-                  {tagFilter ? "#" + tagFilter : prioFilter.length === 1 ? "P" + String(prioFilter[0]) : prioFilter.length ? "优先 " + String(prioFilter.length) : query.trim() ? "搜索" : "筛选"}
-                </button>
-              ) : null}
-
+          <div className="kd-filters">
+            <div className="kd-filters-mini">
+              <Icon.Search size={13} strokeWidth={2} className="shrink-0 text-muted-foreground" />
               {hasFilters ? (
-                <Button size="xs" variant="ghost" onClick={resetFilters}>
-                  <Icon.X size={11} strokeWidth={2} /> 清除筛选
-                </Button>
-              ) : null}
+                <span className="flex flex-wrap items-center gap-1.5 overflow-hidden">
+                  {prioFilter.map(function (p) {
+                    return <span key={p} className="kd-filters-chip">{"P" + String(p)}</span>;
+                  })}
+                  {tagFilter ? <span className="kd-filters-chip">{"#" + tagFilter}</span> : null}
+                  {query.trim() ? <span className="kd-filters-chip">{"“" + query.trim() + "”"}</span> : null}
+                </span>
+              ) : (
+                <span className="text-muted-foreground" style={{ fontSize: "12.5px" }}>搜索或筛选…</span>
+              )}
+              <span className="flex-1" />
             </div>
-
-            <div className="kd-filterrow flex flex-wrap items-center gap-x-3 gap-y-2" data-open={filtersOpen ? "true" : "false"}>
-              <div className="flex items-center gap-x-1.5" role="group" aria-label="优先级筛选">
-                {PRIO_CHIPS.map(function (c) {
-                  const active = prioFilter.indexOf(c.value) >= 0;
-                  const stat = stats.byPriority.find(function (b) {
-                    return b.priority === c.value;
-                  });
-                  const n = stat ? stat.count : 0;
-                  return (
-                    <MagneticChip
-                      key={c.label}
-                      type="button"
-                      title={"只看 " + c.label + " · 可多选"}
-                      aria-pressed={active}
-                      data-prio={c.value}
-                      onFocus={function () {
-                        setHoverPrio(c.value);
-                      }}
-                      onBlur={function () {
-                        setHoverPrio(null);
-                      }}
-                      onClick={function () {
-                        setPrioFilter(
-                          active
-                            ? prioFilter.filter(function (x) {
-                                return x !== c.value;
-                              })
-                            : prioFilter.concat([c.value])
-                        );
-                      }}
-                      className={cn(
-                        "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono transition-colors",
-                        active
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                      )}
-                      style={{ fontSize: "10.5px" }}
-                    >
-                      {"P" + String(c.value)}
-                      {n ? <span className="ml-[5px] tabular-nums opacity-[0.45]">{n}</span> : null}
-                    </MagneticChip>
-                  );
-                })}
-              </div>
-
-              <span className="h-3.5 w-px shrink-0 bg-border/[0.72]" />
-
-              {stats.tags.length ? (
-                <div className="kd-tagblock flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                {stats.tags.map(function (t) {
-                  const on = tagFilter === t.name;
-                  return (
-                    <MagneticChip
-                      key={t.name}
-                      type="button"
-                      onClick={function () {
-                        setTagFilter(on ? null : t.name);
-                      }}
-                      data-tag={t.name}
-                      onFocus={function () {
-                        setHoverTag(t.name);
-                      }}
-                      onBlur={function () {
-                        setHoverTag(null);
-                      }}
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono transition-colors",
-                        on ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                      )}
-                      style={{ fontSize: "10.5px" }}
-                    >
-                      {"#" + t.name}
-                      {t.count ? <span className="ml-[5px] tabular-nums opacity-[0.45]">{t.count}</span> : null}
-                    </MagneticChip>
-                  );
-                })}
+            <div className="kd-filters-body">
+            <div className="kd-filters-full">
+            <div className="flex flex-col gap-2.5 px-4 pb-3 pt-5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="relative" style={{ flex: "1 1 260px", minWidth: 140, maxWidth: 520 }}>
+                  <Icon.Search size={13} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    placeholder="搜索或筛选…"
+                    onChange={function (e) {
+                      setQuery(e.target.value);
+                    }}
+                    className="kd-input pl-[34px] h-8 w-full rounded-lg border border-input bg-transparent pr-2.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground"
+                  />
                 </div>
-              ) : null}
+  
+                {stats.tags.length ? (
+                  <button
+                    type="button"
+                    title="展开筛选：优先级与标签"
+                    aria-expanded={filtersOpen}
+                    onClick={function () {
+                      setFiltersOpen(!filtersOpen);
+                    }}
+                    className={cn(
+                      "kd-ghost kd-filterbtn shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 transition-colors",
+                      hasFilters || filtersOpen
+                        ? "border-foreground text-foreground"
+                        : "border-border/[0.78] text-muted-foreground hover:border-foreground hover:text-foreground"
+                    )}
+                    style={{ fontSize: "10.5px" }}
+                  >
+                    <Icon.Filter size={11} strokeWidth={1.9} />
+                    {tagFilter ? "#" + tagFilter : prioFilter.length === 1 ? "P" + String(prioFilter[0]) : prioFilter.length ? "优先 " + String(prioFilter.length) : query.trim() ? "搜索" : "筛选"}
+                  </button>
+                ) : null}
+  
+                {hasFilters ? (
+                  <Button size="xs" variant="ghost" onClick={resetFilters}>
+                    <Icon.X size={11} strokeWidth={2} /> 清除筛选
+                  </Button>
+                ) : null}
+              </div>
+  
+              <div className="kd-filterrow flex flex-wrap items-center gap-x-3 gap-y-2" data-open={filtersOpen ? "true" : "false"}>
+                <div className="flex items-center gap-x-1.5" role="group" aria-label="优先级筛选">
+                  {PRIO_CHIPS.map(function (c) {
+                    const active = prioFilter.indexOf(c.value) >= 0;
+                    const stat = stats.byPriority.find(function (b) {
+                      return b.priority === c.value;
+                    });
+                    const n = stat ? stat.count : 0;
+                    return (
+                      <MagneticChip
+                        key={c.label}
+                        type="button"
+                        title={"只看 " + c.label + " · 可多选"}
+                        aria-pressed={active}
+                        data-prio={c.value}
+                        onFocus={function () {
+                          setHoverPrio(c.value);
+                        }}
+                        onBlur={function () {
+                          setHoverPrio(null);
+                        }}
+                        onClick={function () {
+                          setPrioFilter(
+                            active
+                              ? prioFilter.filter(function (x) {
+                                  return x !== c.value;
+                                })
+                              : prioFilter.concat([c.value])
+                          );
+                        }}
+                        className={cn(
+                          "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono transition-colors",
+                          active
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                        )}
+                        style={{ fontSize: "10.5px" }}
+                      >
+                        {"P" + String(c.value)}
+                        {n ? <span className="ml-[5px] tabular-nums opacity-[0.45]">{n}</span> : null}
+                      </MagneticChip>
+                    );
+                  })}
+                </div>
+  
+                <span className="h-3.5 w-px shrink-0 bg-border/[0.72]" />
+  
+                {stats.tags.length ? (
+                  <div className="kd-tagblock flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  {stats.tags.map(function (t) {
+                    const on = tagFilter === t.name;
+                    return (
+                      <MagneticChip
+                        key={t.name}
+                        type="button"
+                        onClick={function () {
+                          setTagFilter(on ? null : t.name);
+                        }}
+                        data-tag={t.name}
+                        onFocus={function () {
+                          setHoverTag(t.name);
+                        }}
+                        onBlur={function () {
+                          setHoverTag(null);
+                        }}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono transition-colors",
+                          on ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                        )}
+                        style={{ fontSize: "10.5px" }}
+                      >
+                        {"#" + t.name}
+                        {t.count ? <span className="ml-[5px] tabular-nums opacity-[0.45]">{t.count}</span> : null}
+                      </MagneticChip>
+                    );
+                  })}
+                  </div>
+                ) : null}
+            </div>
+              </div>
+            </div>
             </div>
           </div>
 

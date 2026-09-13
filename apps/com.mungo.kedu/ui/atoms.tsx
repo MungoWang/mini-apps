@@ -71,13 +71,13 @@ export function InboxMark(props: { size?: number; strokeWidth?: number; classNam
   );
 }
 
-export function TickBar(props: { ratio: number; ticks?: number; className?: string }) {
+export function TickBar(props: { ratio: number; ticks?: number; className?: string; celebrate?: boolean }) {
   const total = props.ticks === undefined ? 20 : props.ticks;
   const rate = props.ratio < 0 ? 0 : props.ratio > 1 ? 1 : props.ratio;
   const filled = Math.round(rate * total);
   const cells: React.ReactNode[] = [];
   for (let i = 0; i < total; i++) {
-    cells.push(<span key={i} className={cn("h-2.5 w-px rounded-full transition-colors duration-500", i < filled ? "bg-foreground" : "bg-foreground/[0.15]")} />);
+    cells.push(<span key={i} style={props.celebrate ? { animationDelay: String(i * 45) + "ms" } : undefined} className={cn(props.celebrate ? "kd-tick-cheer" : "", "h-2.5 w-px rounded-full transition-colors duration-500", i < filled ? "bg-foreground" : "bg-foreground/[0.15]")} />);
   }
   return (
     <span className={cn("inline-flex items-end gap-1", props.className)} aria-hidden="true">

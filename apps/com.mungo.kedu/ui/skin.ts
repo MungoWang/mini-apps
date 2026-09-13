@@ -33,7 +33,8 @@ export const SKIN = [
   ".kd-strip-scroll{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}",
   ".kd-strip-scroll::-webkit-scrollbar{display:none}",
   // the quick-add card must paint above the nav/filter rows below it
-  ".kd-lift{position:relative;z-index:30}",
+  ".kd-lift{margin-bottom:6px}"
+  ,".kd-lift{position:relative;z-index:30}",
   // DSL assist popup
   ".kd-pop{position:absolute;left:0;top:100%;width:max-content;max-width:100%;margin-top:6px;z-index:40;padding:6px;border-radius:14px;border:1px solid color-mix(in oklab, var(--border) 85%, transparent);background-color:color-mix(in oklab, var(--card) 99%, transparent);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);max-height:min(62vh,440px);overflow-y:auto}",
   ".kd-cell{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:9px;border:1px solid color-mix(in oklab, var(--border) 70%, transparent);text-align:left;font-size:12.5px;color:var(--muted-foreground);transition:background-color .14s ease,border-color .14s ease,color .14s ease}",
@@ -195,7 +196,24 @@ export const SKIN = [
   ".kd-thumb-wrap:hover .kd-thumb-x{opacity:1}",
   ".kd-zoom{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:24px;background-color:color-mix(in oklab, var(--background) 90%, transparent);backdrop-filter:blur(6px);cursor:zoom-out}",
   ".kd-zoom-img{max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 18px 60px color-mix(in oklab, var(--foreground) 26%, transparent)}",
-  ".kd-sweep{position:absolute;inset:0;transform-origin:left;background-color:color-mix(in oklab, var(--foreground) 6%, transparent);pointer-events:none;transition:transform .12s linear}",
+  // the today bar celebrates once it is full: the row lifts, the number pops, a light sweeps it
+  ,"@keyframes kd-cheer{0%{transform:scaleX(1)}38%{transform:scaleX(1.012)}100%{transform:scaleX(1)}}"
+  ,"@keyframes kd-cheer-glow{0%{opacity:0}35%{opacity:1}100%{opacity:0}}"
+  ,"@keyframes kd-count-pop{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}"
+  ,"@keyframes kd-tick-cheer{0%{transform:scaleY(1);opacity:.55}10%{transform:scaleY(1.25);opacity:.7}24%{transform:scaleY(1.55);opacity:.85}40%{transform:scaleY(1.2);opacity:.65}55%{transform:scaleY(1);opacity:.55}100%{transform:scaleY(1);opacity:.55}}"
+  ,"@keyframes kd-count-breathe{0%{transform:scale(1)}50%{transform:scale(1.07)}100%{transform:scale(1)}}"
+  ,"@keyframes kd-drift-unused{from{opacity:1}to{opacity:1}}"
+  ,".kd-today-rule{position:relative;flex:1;height:15px;overflow:hidden;color:color-mix(in oklab, var(--foreground) 46%, transparent)}"
+  ,"@keyframes kd-liquid{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}"
+  ,".kd-wave{position:absolute;top:0;left:0;height:15px;width:200%;animation:kd-wave-move 14s linear infinite}"
+  ,".kd-wave-b{color:color-mix(in oklab, var(--foreground) 22%, transparent);animation-duration:18s;animation-delay:-4s}"
+  
+  ,"@keyframes kd-wave-move{from{transform:translateX(0)}to{transform:translateX(-50%)}}"
+  ,".kd-tick-cheer{animation:kd-tick-cheer 5.6s cubic-bezier(.45,0,.55,1) infinite;transform-origin:bottom center}"
+  ,".kd-today-full{position:relative;transform-origin:left center}"
+  
+  ,".kd-today-full .kd-today-count{animation:kd-count-breathe 3s cubic-bezier(.4,0,.2,1) infinite;color:var(--foreground)}"
+  ,".kd-sweep{position:absolute;inset:0;transform-origin:left;background-color:color-mix(in oklab, var(--foreground) 6%, transparent);pointer-events:none;transition:transform .12s linear}",
   // the tab bar's baseline: the underline of the active tab sits on this rule
   // wide: tags flush right on the same line as the query controls. narrow: they take their own
   // full-width line, left aligned, so wrapping never staircases out of the segmented control.
@@ -216,4 +234,21 @@ export const SKIN = [
   "@media (min-width:768px){.kd-detail{grid-template-columns:repeat(2,minmax(0,1fr))}}",
   ".kd-time{height:28px;padding:0 8px;border-radius:8px;border:1px solid color-mix(in oklab, var(--border) 78%, transparent);background-color:transparent;color:var(--foreground);font-family:inherit;font-size:12px;outline:none}",
   ".kd-time:focus-visible{border-color:color-mix(in oklab, var(--foreground) 30%, transparent)}",
+  ".kd-filters{position:relative;flex:0 0 auto;z-index:30;display:grid;grid-template-rows:auto minmax(0,0fr);transition:grid-template-rows .3s cubic-bezier(.2,.9,.3,1)}",
+  ".kd-filters-mini{grid-row:1;display:flex;align-items:center;gap:9px;min-height:0;overflow:hidden;padding:0 16px;height:44px;box-sizing:border-box;border:0;background:transparent;transition:opacity .16s ease,height .3s cubic-bezier(.2,.9,.3,1)}",
+  ".kd-filters-body{grid-row:2;min-height:0;overflow:hidden}"
+  ,".kd-filters-full{opacity:0;transform:translateY(-5px);pointer-events:none;transition:opacity .2s ease,transform .28s cubic-bezier(.2,.9,.3,1)}",
+  ".kd-filters-chip{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1;padding:3px 7px;border-radius:6px;background-color:color-mix(in oklab, var(--foreground) 10%, transparent);color:var(--foreground)}",
+
+  ".kd-filters:hover,.kd-filters:focus-within{grid-template-rows:minmax(0,0fr) minmax(0,1fr)}"
+  ,".kd-filters:hover .kd-filters-full,.kd-filters:focus-within .kd-filters-full{opacity:1;transform:none;pointer-events:auto}",
+  ".kd-filters:hover .kd-filters-mini,.kd-filters:focus-within .kd-filters-mini{opacity:0;height:0}",
+  ".kd-filters:hover .kd-filters-body,.kd-filters:focus-within .kd-filters-body{overflow:visible}",
+  // the add-card's footer (insert hints + chips) stays collapsed until the field has focus,
+  // reusing the same content-driven rows trick as the filter band
+  ".kd-quickadd{display:grid;grid-template-rows:auto minmax(0,0fr);transition:grid-template-rows .3s cubic-bezier(.2,.9,.3,1)}",
+  ".kd-quickadd:focus-within{grid-template-rows:auto minmax(0,1fr)}",
+  ".kd-quickadd .kd-strip{grid-row:2;min-height:0;overflow:hidden;background:transparent;border-radius:0 0 15px 15px;border-top:1px solid color-mix(in oklab, var(--border) 62%, transparent)}",
+  // while folded the strip's own box still overflows its zero row, so hide it outright
+  ".kd-quickadd:not(:focus-within) .kd-strip{visibility:hidden;border-top-width:0}",
 ].join("");
